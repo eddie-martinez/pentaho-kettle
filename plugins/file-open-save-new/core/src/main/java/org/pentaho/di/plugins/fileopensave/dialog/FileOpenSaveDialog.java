@@ -41,18 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.dialogs.Dialog;
 
-import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ComboViewer;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.TreeSelection;
-import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.SashForm;
@@ -193,6 +182,8 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
   private FlatButton flatBtnAdd;
 
   private FlatButton flatBtnRefresh;
+
+  private FlatButton flatBtnUp;
 
   static {
     FILE_CONTROLLER = new FileController( FileCacheService.INSTANCE.get(), ProviderServiceService.INSTANCE.get() );
@@ -564,13 +555,28 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     fileButtons.setLayout( new RowLayout() );
     fileButtons.setLayoutData( new FormDataBuilder().right( 100, 0 ).result() );
 
-    FlatButton
-      upButton =
+
+    flatBtnUp =
       new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Up_Folder.S_D.svg", 32, 32 ) )
         .setDisabledImage( rasterImage( "img/Up_Folder.S_D_disabled.svg", 32, 32 ) )
         .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.up-directory.button" ) )
 
-        .setLayoutData( new RowData() ).setEnabled( true );
+        .setLayoutData( new RowData() ).setEnabled( false ).addListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent) {
+                  TreeSelection treeSelection = (TreeSelection) treeViewer.getSelection();
+                  if(!treeSelection.isEmpty()){
+                   Object firstElement = treeSelection.getFirstElement();
+                   TreePath[] paths =  treeSelection.getPaths();
+                   if(firstElement instanceof Directory){
+                     TreePath parentPath = paths[paths.length -1].getParentPath();
+                     ISelection currentSelection = new StructuredSelection(parentPath.getLastSegment());
+                     treeViewer.setSelection(currentSelection);
+                   }
+                  }
+                }
+              });
+
 
     flatBtnAdd = new FlatButton( fileButtons, SWT.NONE )
       .setEnabledImage( rasterImage( "img/New_Folder.S_D.svg", 32, 32 ) )
@@ -701,6 +707,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
     treeViewer.addPostSelectionChangedListener( e -> {
       IStructuredSelection selection = (IStructuredSelection) e.getSelection();
+      setBtnUpEnable(selection);
       Object selectedNode = selection.getFirstElement();
       // Expand the selection in the treeviewer
       if ( selectedNode != null && !treeViewer.getExpandedState( selectedNode ) ) {
@@ -1022,6 +1029,14 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
       image.dispose();
     } );
     return image;
+  }
+
+  private void setBtnUpEnable ( IStructuredSelection structuredSelection) {
+    if(!structuredSelection.isEmpty() && structuredSelection.getFirstElement() instanceof Directory){
+      flatBtnUp.setEnabled(true);
+    }else{
+      flatBtnUp.setEnabled(false);
+    }
   }
 
   private void openHelpDialog() {
