@@ -41,18 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.dialogs.Dialog;
 
-import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ComboViewer;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.TreeSelection;
-import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.SashForm;
@@ -194,6 +183,8 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
   private FlatButton flatBtnRefresh;
 
+  private FlatButton flatBtnUp;
+
   static {
     FILE_CONTROLLER = new FileController( FileCacheService.INSTANCE.get(), ProviderServiceService.INSTANCE.get() );
   }
@@ -208,9 +199,9 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     try {
       InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream( FILE_EXTENSION_RESOURCE_PATH );
       String jsonString = new BufferedReader(
-        new InputStreamReader( inputStream, StandardCharsets.UTF_8 ) )
-        .lines()
-        .collect( Collectors.joining( "\n" ) );
+              new InputStreamReader( inputStream, StandardCharsets.UTF_8 ) )
+              .lines()
+              .collect( Collectors.joining( "\n" ) );
       validFileTypes = objectMapper.readValue( jsonString, FilterFileType[].class );
     } catch ( Exception ex ) {
       log.logError( "Could not load resource", ex );
@@ -319,26 +310,26 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     buttons.setLayoutData( new FormDataBuilder().top( header, 25 ).left( 0, 0 ).right( 100, 0 ).result() );
 
     FlatButton flatBtnHelp =
-      new FlatButton( parent, SWT.NONE ).setEnabledImage( rasterImage( "img/help.svg", 24, 24 ) )
-        .setDisabledImage( rasterImage( "img/help.svg", 24, 24 ) ).setEnabled( true )
-        .setLayoutData( new FormDataBuilder().bottom( 100, 0 ).left( 0, 20 ).result() ).addListener(
-          new SelectionAdapter() {
-            @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-              openHelpDialog();
-            }
-          } );
+            new FlatButton( parent, SWT.NONE ).setEnabledImage( rasterImage( "img/help.svg", 24, 24 ) )
+                    .setDisabledImage( rasterImage( "img/help.svg", 24, 24 ) ).setEnabled( true )
+                    .setLayoutData( new FormDataBuilder().bottom( 100, 0 ).left( 0, 20 ).result() ).addListener(
+                            new SelectionAdapter() {
+                              @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+                                openHelpDialog();
+                              }
+                            } );
     flatBtnHelp.getLabel().setText( BaseMessages.getString( PKG, "file-open-save-plugin.app.help.label" ) );
 
     Composite select = createFilesBrowser( parent );
     select.setLayoutData(
-      new FormDataBuilder().top( buttons, 15 ).left( 0, 0 ).right( 100, 0 ).bottom( flatBtnHelp.getLabel(), -20 )
-        .result() );
+            new FormDataBuilder().top( buttons, 15 ).left( 0, 0 ).right( 100, 0 ).bottom( flatBtnHelp.getLabel(), -20 )
+                    .result() );
 
     typedComboBox = new TypedComboBox<>( parent );
 
     String[] fileFilters = StringUtils.isNotEmpty( fileDialogOperation.getFilter() )
-      ? fileDialogOperation.getFilter().split( "," )
-      : new String[] {ALL_FILE_TYPES};
+            ? fileDialogOperation.getFilter().split( "," )
+            : new String[] {ALL_FILE_TYPES};
     List<FilterFileType> filterFileTypes = new ArrayList<>();
     int indexOfDefault = 0;
     for ( int i = 0; i < fileFilters.length; i++ ) {
@@ -362,9 +353,9 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
     typedComboBox.setLabelProvider( element -> {
       String fileExtensions = element.getValue()
-        .replace( '\\', '*' )
-        .replace( '|', ',' )
-        .replace( "$", "" );
+              .replace( '\\', '*' )
+              .replace( '|', ',' )
+              .replace( "$", "" );
       return  element.getLabel() + " (" + fileExtensions + ")";
     } );
 
@@ -436,8 +427,8 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
         }
 
         if ( structuredSelection.getFirstElement() instanceof File
-          && txtFileName.getText() != null
-          && StringUtils.isNotEmpty( txtFileName.getText() ) ) {
+                && txtFileName.getText() != null
+                && StringUtils.isNotEmpty( txtFileName.getText() ) ) {
           processOnSavePressed( (File) structuredSelection.getFirstElement() );
         }
       }
@@ -497,13 +488,13 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     PropsUI.getInstance().setLook( lblSelect );
     lblSelect.setText( StringUtils.capitalize( shellTitle ) );
     Font bigFont = new Font( getShell().getDisplay(),
-      Arrays.stream( lblSelect.getFont().getFontData() )
-        .<FontData>map(
-          fd -> {
-            fd.setHeight( 22 );
-            fd.setStyle( SWT.BOLD );
-            return fd; } )
-        .toArray( FontData[]::new ) );
+            Arrays.stream( lblSelect.getFont().getFontData() )
+                    .<FontData>map(
+                            fd -> {
+                              fd.setHeight( 22 );
+                              fd.setStyle( SWT.BOLD );
+                              return fd; } )
+                    .toArray( FontData[]::new ) );
     lblSelect.setFont( bigFont );
     getShell().addDisposeListener( (e) -> bigFont.dispose() );
 
@@ -548,66 +539,81 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     buttons.setLayout( formLayout );
 
     FlatButton backButton =
-      new FlatButton( buttons, SWT.NONE ).setEnabledImage( rasterImage( "img/Backwards.S_D.svg", 32, 32 ) )
-        .setDisabledImage( rasterImage( "img/Backwards.S_D_disabled.svg", 32, 32 ) )
-        .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.back.button" ) )
-        .setEnabled( false );
+            new FlatButton( buttons, SWT.NONE ).setEnabledImage( rasterImage( "img/Backwards.S_D.svg", 32, 32 ) )
+                    .setDisabledImage( rasterImage( "img/Backwards.S_D_disabled.svg", 32, 32 ) )
+                    .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.back.button" ) )
+                    .setEnabled( false );
 
     FlatButton forwardButton =
-      new FlatButton( buttons, SWT.NONE ).setEnabledImage( rasterImage( "img/Forwards.S_D.svg", 32, 32 ) )
-        .setDisabledImage( rasterImage( "img/Forwards.S_D_disabled.svg", 32, 32 ) )
-        .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.forward.button" ) )
-        .setEnabled( true ).setLayoutData( new FormDataBuilder().left( backButton.getLabel(), 0 ).result() );
+            new FlatButton( buttons, SWT.NONE ).setEnabledImage( rasterImage( "img/Forwards.S_D.svg", 32, 32 ) )
+                    .setDisabledImage( rasterImage( "img/Forwards.S_D_disabled.svg", 32, 32 ) )
+                    .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.forward.button" ) )
+                    .setEnabled( true ).setLayoutData( new FormDataBuilder().left( backButton.getLabel(), 0 ).result() );
 
     Composite fileButtons = new Composite( buttons, SWT.NONE );
     PropsUI.getInstance().setLook( fileButtons );
     fileButtons.setLayout( new RowLayout() );
     fileButtons.setLayoutData( new FormDataBuilder().right( 100, 0 ).result() );
 
-    FlatButton
-      upButton =
-      new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Up_Folder.S_D.svg", 32, 32 ) )
-        .setDisabledImage( rasterImage( "img/Up_Folder.S_D_disabled.svg", 32, 32 ) )
-        .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.up-directory.button" ) )
 
-        .setLayoutData( new RowData() ).setEnabled( true );
+    flatBtnUp =
+            new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Up_Folder.S_D.svg", 32, 32 ) )
+                    .setDisabledImage( rasterImage( "img/Up_Folder.S_D_disabled.svg", 32, 32 ) )
+                    .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.up-directory.button" ) )
+
+                    .setLayoutData( new RowData() ).setEnabled( false ).addListener(new SelectionAdapter() {
+                      @Override
+                      public void widgetSelected(SelectionEvent selectionEvent) {
+                        TreeSelection treeSelection = (TreeSelection) treeViewer.getSelection();
+                        if(!treeSelection.isEmpty()){
+                          Object firstElement = treeSelection.getFirstElement();
+                          TreePath[] paths =  treeSelection.getPaths();
+                          if(firstElement instanceof Directory){
+                            TreePath parentPath = paths[paths.length -1].getParentPath();
+                            ISelection currentSelection = new StructuredSelection(parentPath.getLastSegment());
+                            treeViewer.setSelection(currentSelection);
+                          }
+                        }
+                      }
+                    });
+
 
     flatBtnAdd = new FlatButton( fileButtons, SWT.NONE )
-      .setEnabledImage( rasterImage( "img/New_Folder.S_D.svg", 32, 32 ) )
-      .setDisabledImage( rasterImage( "img/New_Folder.S_D_disabled.svg", 32, 32 ) )
-      .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.add-folder.button" ) )
-      .setLayoutData( new RowData() ).setEnabled( false ).addListener(
-        new SelectionAdapter() {
-          @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-            enterStringDialog = new EnterStringDialog( getShell(), StringUtils.EMPTY,
-                    BaseMessages.getString( PKG, "file-open-save-plugin.app.add-folder.shell-text" ),
-                    BaseMessages.getString( PKG, "file-open-save-plugin.app.add-folder.line-text" ) );
-            String newFolderName = enterStringDialog.open();
+            .setEnabledImage( rasterImage( "img/New_Folder.S_D.svg", 32, 32 ) )
+            .setDisabledImage( rasterImage( "img/New_Folder.S_D_disabled.svg", 32, 32 ) )
+            .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.add-folder.button" ) )
+            .setLayoutData( new RowData() ).setEnabled( false ).addListener(
+                    new SelectionAdapter() {
+                      @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+                        enterStringDialog = new EnterStringDialog( getShell(), StringUtils.EMPTY,
+                                BaseMessages.getString( PKG, "file-open-save-plugin.app.add-folder.shell-text" ),
+                                BaseMessages.getString( PKG, "file-open-save-plugin.app.add-folder.line-text" ) );
+                        String newFolderName = enterStringDialog.open();
 
-            if ( StringUtils.isNotEmpty( newFolderName ) ) {
-              addFolder( newFolderName );
-            }
-          }
-        } );
+                        if ( StringUtils.isNotEmpty( newFolderName ) ) {
+                          addFolder( newFolderName );
+                        }
+                      }
+                    } );
 
 
     FlatButton
-      deleteButton =
-      new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Close.S_D.svg", 32, 32 ) )
-        .setDisabledImage( rasterImage( "img/Close.S_D_disabled.svg", 32, 32 ) )
-        .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.delete.button" ) )
-        .setLayoutData( new RowData() ).setEnabled( false );
+            deleteButton =
+            new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Close.S_D.svg", 32, 32 ) )
+                    .setDisabledImage( rasterImage( "img/Close.S_D_disabled.svg", 32, 32 ) )
+                    .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.delete.button" ) )
+                    .setLayoutData( new RowData() ).setEnabled( false );
 
     flatBtnRefresh =
-      new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Refresh.S_D.svg", 32, 32 ) )
-        .setDisabledImage( rasterImage( "img/Refresh.S_D_disabled.svg", 32, 32 ) )
-        .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.refresh.button" ) )
-        .setLayoutData( new RowData() ).setEnabled( true ).addListener( new SelectionAdapter() {
-          @Override
-          public void widgetSelected( SelectionEvent selectionEvent ) {
-            refreshDisplay( selectionEvent );
-          }
-        } );
+            new FlatButton( fileButtons, SWT.NONE ).setEnabledImage( rasterImage( "img/Refresh.S_D.svg", 32, 32 ) )
+                    .setDisabledImage( rasterImage( "img/Refresh.S_D_disabled.svg", 32, 32 ) )
+                    .setToolTipText( BaseMessages.getString( PKG, "file-open-save-plugin.app.refresh.button" ) )
+                    .setLayoutData( new RowData() ).setEnabled( true ).addListener( new SelectionAdapter() {
+                      @Override
+                      public void widgetSelected( SelectionEvent selectionEvent ) {
+                        refreshDisplay( selectionEvent );
+                      }
+                    } );
 
     txtNav = new Text( buttons, SWT.BORDER );
 
@@ -615,7 +621,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     PropsUI.getInstance().setLook( txtNav );
     txtNav.setBackground( getShell().getDisplay().getSystemColor( SWT.COLOR_WHITE ) );
     txtNav.setLayoutData(
-      new FormDataBuilder().left( forwardButton.getLabel(), 10 ).right( fileButtons, -10 ).height( 32 ).result() );
+            new FormDataBuilder().left( forwardButton.getLabel(), 10 ).right( fileButtons, -10 ).height( 32 ).result() );
 
     return buttons;
   }
@@ -630,7 +636,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
       if ( treeViewerSelection.getFirstElement() instanceof Tree ) {
         try {
           fileProvider = ProviderServiceService.INSTANCE.get().get( ( (Tree) treeViewerSelection.getFirstElement() )
-            .getProvider() );
+                  .getProvider() );
         } catch ( Exception ex ) {
           log.logDebug( "Unable to find provider" );
         }
@@ -650,7 +656,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
         fileProvider.clearProviderCache();
       }
       if ( treeViewerSelection.getFirstElement() instanceof File
-        && StringUtils.isBlank( ( (File) treeViewerSelection.getFirstElement() ).getParent() ) ) {
+              && StringUtils.isBlank( ( (File) treeViewerSelection.getFirstElement() ).getParent() ) ) {
         treeViewer.collapseAll();
       }
 
@@ -701,6 +707,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
     treeViewer.addPostSelectionChangedListener( e -> {
       IStructuredSelection selection = (IStructuredSelection) e.getSelection();
+      setBtnUpEnable(selection);
       Object selectedNode = selection.getFirstElement();
       // Expand the selection in the treeviewer
       if ( selectedNode != null && !treeViewer.getExpandedState( selectedNode ) ) {
@@ -778,7 +785,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
     fileTableViewer.getTable().addListener( SWT.Resize, e -> {
       Rectangle r = fileTableViewer.getTable().getClientArea(); tvcName.getColumn()
-        .setWidth( Math.max( 150, r.width - tvcType.getColumn().getWidth() - tvcModified.getColumn().getWidth() ) );
+              .setWidth( Math.max( 150, r.width - tvcType.getColumn().getWidth() - tvcModified.getColumn().getWidth() ) );
 
     } );
 
@@ -814,8 +821,8 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
       } else if ( selection instanceof File ) {
         File localFile = (File) selection;
         if ( command.equalsIgnoreCase( FileDialogOperation.SELECT_FILE )
-          || command.equalsIgnoreCase( FileDialogOperation.OPEN )
-          || command.equalsIgnoreCase( FileDialogOperation.SELECT_FILE_FOLDER ) ) {
+                || command.equalsIgnoreCase( FileDialogOperation.OPEN )
+                || command.equalsIgnoreCase( FileDialogOperation.SELECT_FILE_FOLDER ) ) {
           txtNav.setText( getNavigationPath( localFile ) );
           String fileExtension = extractFileExtension( localFile.getPath() );
           if ( isValidFileExtension( fileExtension ) ) {
@@ -856,7 +863,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
   private boolean isSaveState() {
     return command.equals( FileDialogOperation.SAVE )
-      || command.equals( FileDialogOperation.SAVE_TO ) || command.equals( FileDialogOperation.SAVE_TO_FILE_FOLDER );
+            || command.equals( FileDialogOperation.SAVE_TO ) || command.equals( FileDialogOperation.SAVE_TO_FILE_FOLDER );
   }
 
   private void processState() {
@@ -877,9 +884,9 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
 
         if ( ( command.equals( FileDialogOperation.SAVE_TO_FILE_FOLDER )
-          || command.equals( FileDialogOperation.SAVE )
-          || command.equals( FileDialogOperation.SAVE_TO ) )
-          && StringUtils.isNotEmpty( txtFileName.getText() ) ) {
+                || command.equals( FileDialogOperation.SAVE )
+                || command.equals( FileDialogOperation.SAVE_TO ) )
+                && StringUtils.isNotEmpty( txtFileName.getText() ) ) {
           btnSave.setEnabled( true );
         }
       } else {
@@ -897,8 +904,8 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
       String tempName = ( (File) selectedFileTreeViewer.getFirstElement() ).getPath();
 
       if ( command.equals( FileDialogOperation.SELECT_FILE )
-        || command.equalsIgnoreCase( FileDialogOperation.SELECT_FILE_FOLDER )
-        || command.equals( FileDialogOperation.OPEN ) ) {
+              || command.equalsIgnoreCase( FileDialogOperation.SELECT_FILE_FOLDER )
+              || command.equals( FileDialogOperation.OPEN ) ) {
 
         if ( typedComboBox.getSelection().getId().equals( ALL_FILE_TYPES ) ) {
           name = tempName;
@@ -921,7 +928,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
   private String extractFileExtension( String fullFilePath ) {
     int lastIndexOfPeriod = fullFilePath.lastIndexOf( FILE_PERIOD );
     String fileExtension = ( lastIndexOfPeriod == -1 )
-      ? StringUtils.EMPTY : fullFilePath.substring( lastIndexOfPeriod );
+            ? StringUtils.EMPTY : fullFilePath.substring( lastIndexOfPeriod );
     return fileExtension;
   }
 
@@ -1015,13 +1022,21 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
   private Image rasterImage( String path, int width, int height ) {
     SwtUniversalImage img =
-      SwtSvgImageUtil.getUniversalImage( getShell().getDisplay(), getClass().getClassLoader(), path );
+            SwtSvgImageUtil.getUniversalImage( getShell().getDisplay(), getClass().getClassLoader(), path );
     Image image = img.getAsBitmapForSize( getShell().getDisplay(), width, height );
     getShell().addDisposeListener( e -> {
       img.dispose();
       image.dispose();
     } );
     return image;
+  }
+
+  private void setBtnUpEnable ( IStructuredSelection structuredSelection) {
+    if(!structuredSelection.isEmpty() && structuredSelection.getFirstElement() instanceof Directory){
+      flatBtnUp.setEnabled(true);
+    }else{
+      flatBtnUp.setEnabled(false);
+    }
   }
 
   private void openHelpDialog() {
@@ -1111,10 +1126,10 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     } else if ( selectedElement instanceof Directory ) {
       try {
         fileTableViewer.setInput( FILE_CONTROLLER.getFiles( (File) selectedElement, null, useCache ).stream().sorted(
-            Comparator.comparing( f -> f instanceof Directory, Boolean::compare ).reversed()
-              .thenComparing( Comparator.comparing( f -> ( (File) f ).getName(),
-                String.CASE_INSENSITIVE_ORDER ) ) )
-          .toArray() );
+                        Comparator.comparing( f -> f instanceof Directory, Boolean::compare ).reversed()
+                                .thenComparing( Comparator.comparing( f -> ( (File) f ).getName(),
+                                        String.CASE_INSENSITIVE_ORDER ) ) )
+                .toArray() );
 
         for ( TableItem fileTableItem : fileTableViewer.getTable().getItems() ) {
           Object tableItemObject = fileTableItem.getData();
@@ -1293,8 +1308,8 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
       } else if ( parentElement instanceof Directory ) {
         try {
           return fileController.getFiles( (Directory) parentElement, null, true ).stream()
-            .filter( Directory.class::isInstance )
-            .sorted( Comparator.comparing( Entity::getName, String.CASE_INSENSITIVE_ORDER ) ).toArray();
+                  .filter( Directory.class::isInstance )
+                  .sorted( Comparator.comparing( Entity::getName, String.CASE_INSENSITIVE_ORDER ) ).toArray();
         } catch ( FileException e ) {
           // TODO: Error message that something went wrong
         }
@@ -1369,7 +1384,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
 
       viewer.addSelectionChangedListener( event -> {
         IStructuredSelection selection = (IStructuredSelection) event
-          .getSelection();
+                .getSelection();
         T typedSelection = getTypedObject( selection.getFirstElement() );
         if ( typedSelection != null ) {
           currentSelection = typedSelection;
@@ -1412,7 +1427,7 @@ public class FileOpenSaveDialog extends Dialog implements FileDetails {
     }
 
     public void removeSelectionListener(
-      TypedComboBoxSelectionListener<T> listener ) {
+            TypedComboBoxSelectionListener<T> listener ) {
       this.selectionListeners.remove( listener );
     }
 
