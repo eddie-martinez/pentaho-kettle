@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2020 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2022 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -118,7 +118,7 @@ public class BeanInjectionInfo {
       return;
     }
 
-    Property prop = new Property( propertyName, metaInj.group(), leaf.createCallStack() );
+    Property prop = new Property( propertyName, metaInj.group(), metaInj.required(), leaf.createCallStack() );
     properties.put( prop.name, prop );
     Group gr = groupsMap.get( metaInj.group() );
     if ( gr == null ) {
@@ -193,12 +193,19 @@ public class BeanInjectionInfo {
   public class Property {
     private final String name;
     private final String groupName;
+    private boolean require;
+
     protected final List<BeanLevelInfo> path;
     public final int pathArraysCount;
 
     public Property( String name, String groupName, List<BeanLevelInfo> path ) {
+      this(name, groupName, false, path);
+    }
+
+    public Property( String name, String groupName, boolean require, List<BeanLevelInfo> path ) {
       this.name = name;
       this.groupName = groupName;
+      this.require = require;
       this.path = path;
       int ac = 0;
       for ( BeanLevelInfo level : path ) {
@@ -216,6 +223,8 @@ public class BeanInjectionInfo {
     public String getGroupName() {
       return groupName;
     }
+
+    public boolean isRequire() { return require; }
 
     public List<BeanLevelInfo> getPath() {
       return path;

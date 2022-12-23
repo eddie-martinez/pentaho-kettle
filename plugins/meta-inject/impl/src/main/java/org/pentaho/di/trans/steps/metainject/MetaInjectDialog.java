@@ -100,6 +100,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @PluginDialog(
     id = "MetaInject",
@@ -109,6 +110,7 @@ import java.util.Set;
 public class MetaInjectDialog extends BaseStepDialog implements StepDialogInterface {
 
   public static final String CONST_VALUE = "<const>";
+
   private static Class<?> PKG = MetaInjectMeta.class; // for i18n purposes, needed by Translator2!!
 
   private MetaInjectMeta metaInjectMeta;
@@ -596,6 +598,9 @@ public class MetaInjectDialog extends BaseStepDialog implements StepDialogInterf
           BaseMessages.getString( PKG, "MetaInjectDialog.Column.TargetDescription" ),
           ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
         new ColumnInfo(
+          BaseMessages.getString( PKG, "MetaInjectDialog.Column.RequiredField" ),
+          ColumnInfo.COLUMN_TYPE_TEXT, false, true ),
+        new ColumnInfo(
           BaseMessages.getString( PKG, "MetaInjectDialog.Column.SourceStep" ),
           ColumnInfo.COLUMN_TYPE_CCOMBO, false, true ),
         new ColumnInfo(
@@ -655,16 +660,16 @@ public class MetaInjectDialog extends BaseStepDialog implements StepDialogInterf
                 SourceStepField newSource = fieldMap.get( selectedStepField );
                 if ( newSource == null ) {
                   newSource = new SourceStepField( null, selectedStepField );
-                  item.setText( 2, CONST_VALUE );
-                  item.setText( 3, selectedStepField );
+                  item.setText( 3, CONST_VALUE );
+                  item.setText( 4, selectedStepField );
                 } else {
-                  item.setText( 2, newSource.getStepname() );
-                  item.setText( 3, newSource.getField() );
+                  item.setText( 3, newSource.getStepname() );
+                  item.setText( 4, newSource.getField() );
                 }
                 targetSourceMapping.put( target, newSource );
               } else {
-                item.setText( 2, "" );
                 item.setText( 3, "" );
+                item.setText( 4, "" );
                 targetSourceMapping.remove( target );
               }
 
@@ -926,8 +931,8 @@ public class MetaInjectDialog extends BaseStepDialog implements StepDialogInterf
 
         SourceStepField source = targetSourceMapping.get( target );
         if ( source != null ) {
-          entryItem.setText( 2, Const.NVL( source.getStepname(), "" ) );
-          entryItem.setText( 3, Const.NVL( source.getField(), "" ) );
+          entryItem.setText( 3, Const.NVL( source.getStepname(), "" ) );
+          entryItem.setText( 4, Const.NVL( source.getField(), "" ) );
         }
       } else {
         // Fields...
@@ -959,8 +964,8 @@ public class MetaInjectDialog extends BaseStepDialog implements StepDialogInterf
 
           SourceStepField source = targetSourceMapping.get( target );
           if ( source != null ) {
-            treeItem.setText( 2, Const.NVL( source.getStepname(), "" ) );
-            treeItem.setText( 3, Const.NVL( source.getField(), "" ) );
+            treeItem.setText( 3, Const.NVL( source.getStepname(), "" ) );
+            treeItem.setText( 4, Const.NVL( source.getField(), "" ) );
           }
         }
       }
@@ -990,8 +995,10 @@ public class MetaInjectDialog extends BaseStepDialog implements StepDialogInterf
 
         SourceStepField source = targetSourceMapping.get( target );
         if ( source != null ) {
-          treeItem.setText( 2, Const.NVL( source.getStepname() == null ? CONST_VALUE : source.getStepname(), "" ) );
-          treeItem.setText( 3, Const.NVL( source.getField(), "" ) );
+          treeItem.setText( 2, Const.NVL(
+            String.valueOf( stepInjectionInfo.getProperties().get( property.getName() ).isRequire() ), "" ) );
+          treeItem.setText( 3, Const.NVL( source.getStepname() == null ? CONST_VALUE : source.getStepname(), "" ) );
+          treeItem.setText( 4, Const.NVL( source.getField(), "" ) );
         }
       }
     }

@@ -45,4 +45,7 @@ public @interface Injection {
 
   /** Convert empty values or not. By default, empty value doesn't change target value. */
   boolean convertEmpty() default false;
+
+  /** Property for Required Fields **/
+  boolean required() default false;
 }

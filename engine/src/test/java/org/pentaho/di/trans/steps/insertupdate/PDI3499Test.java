@@ -40,6 +40,7 @@ import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaDate;
 import org.pentaho.di.core.row.value.ValueMetaString;
+import org.pentaho.di.trans.steps.common.UpdateField;
 import org.pentaho.di.trans.steps.mock.StepMockHelper;
 
 /**
@@ -86,7 +87,11 @@ public class PDI3499Test {
     inputRowMeta.addValueMeta( valueMeta );
 
     InsertUpdateMeta stepMeta = smh.processRowsStepMetaInterface;
-    doReturn( new Boolean[] { true } ).when( stepMeta ).getUpdate();
+    UpdateField updateField = new UpdateField();
+    updateField.setUpdate( true );
+    UpdateField[] updateFields = new UpdateField[1];
+    updateFields[0] = updateField;
+    doReturn(  updateFields  ).when( stepMeta ).getUpdateFields();
 
     InsertUpdateData stepData = smh.processRowsStepDataInterface;
     stepData.lookupParameterRowMeta = inputRowMeta;
