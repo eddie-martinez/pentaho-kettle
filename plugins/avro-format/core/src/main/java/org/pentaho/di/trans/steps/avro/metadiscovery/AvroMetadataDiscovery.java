@@ -21,6 +21,7 @@
  ******************************************************************************/
 package org.pentaho.di.trans.steps.avro.metadiscovery;
 
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.apache.avro.Schema;
 import org.pentaho.di.core.exception.KettleException;
@@ -35,12 +36,20 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.steps.avro.input.AvroInput;
 import org.pentaho.di.trans.steps.avro.input.AvroInputField;
+import org.pentaho.di.trans.steps.avro.input.AvroInputMetaBase;
 import org.pentaho.di.trans.steps.avro.input.AvroNestedFieldGetter;
 import org.pentaho.di.trans.steps.avro.input.IAvroInputField;
+import org.pentaho.di.trans.steps.avro.input.PentahoAvroInputFormat;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.pentaho.di.trans.steps.avro.metadiscovery.AvroMetadataDiscoveryMeta.SourceFormat.AVRO_ALT_SCHEMA;
 
 
 public class AvroMetadataDiscovery extends BaseStep implements StepInterface {
@@ -64,10 +73,70 @@ public class AvroMetadataDiscovery extends BaseStep implements StepInterface {
   public boolean processRow( StepMetaInterface smi, StepDataInterface sdi ) throws KettleException {
 
     Object[] row = getRow();
+    RowMetaInterface inputRowMeta = getInputRowMeta();
+    String schemaStr = null;
+    String schemaStrPath = null;
 
     if ( first ) {
 
       first = false;
+
+      AvroMetadataDiscoveryMeta.SourceFormat sourceFormat =
+        AvroMetadataDiscoveryMeta.SourceFormat.values[ meta.getFormat() ];
+
+      switch ( sourceFormat ) {
+        // AVRO FILES WITH SCHEMA
+        case AVRO_USE_SCHEMA:
+          if ( meta.getDataLocationType() == AvroMetadataDiscoveryMeta.LocationDescriptor.FILE_NAME ) {
+            try {
+              PentahoAvroInputFormat pentahoAvroInputFormat = new PentahoAvroInputFormat();
+              pentahoAvroInputFormat.setInputFile( meta.getDataLocation() );
+              schemaStr = String.valueOf( pentahoAvroInputFormat.readAvroSchema() );
+            } catch ( Exception e ) {
+              throw new RuntimeException( e );
+            }
+          } else {
+            // AVRO File + Schema field it's been passed in from previous Step
+            try {
+              List<Object> avroSchemaRows = Stream.of( row ).collect( Collectors.toList() );
+              int schemaIndex = inputRowMeta.getValueMetaList().indexOf( inputRowMeta.getValueMetaList().stream()
+                .filter( t -> t.getName().equalsIgnoreCase( meta.getDataLocation() ) ).findFirst().get() );
+              schemaStrPath = avroSchemaRows.get( schemaIndex ).toString();
+              PentahoAvroInputFormat pentahoAvroInputFormat = new PentahoAvroInputFormat();
+              pentahoAvroInputFormat.setInputFile( schemaStrPath );
+              schemaStr = String.valueOf( pentahoAvroInputFormat.readAvroSchema() );
+            } catch ( Exception e ) {
+              throw new RuntimeException( e );
+            }
+          }
+          break;
+
+        // AVRO FILES WITH ALT SCHEMA
+        case AVRO_ALT_SCHEMA:
+          if ( meta.getSchemaLocationType() == AvroMetadataDiscoveryMeta.LocationDescriptor.FILE_NAME ) {
+            try {
+              schemaStr =
+                String.valueOf(
+                  new Schema.Parser().parse( KettleVFS.getInputStream( meta.getSchemaLocation(), null ) ) );
+            } catch ( IOException e ) {
+              throw new RuntimeException( e );
+            }
+          } else {
+            // AVRO Schema location field it's been passed in from previous Step
+            try {
+              List<Object> avroSchemaRows = Stream.of( row ).collect( Collectors.toList() );
+              int schemaIndex = inputRowMeta.getValueMetaList().indexOf( inputRowMeta.getValueMetaList().stream()
+                .filter( t -> t.getName().equalsIgnoreCase( meta.getSchemaLocation() ) ).findFirst().get() );
+              schemaStrPath = avroSchemaRows.get( schemaIndex ).toString();
+              schemaStr =
+                String.valueOf(
+                  new Schema.Parser().parse( KettleVFS.getInputStream( schemaStrPath, null ) ) );
+            } catch ( Exception e ) {
+              throw new RuntimeException( e );
+            }
+          }
+          break;
+      }
 
       data.setOutputRowMeta( new RowMeta() );
       meta.getFields( data.outputRowMeta, getStepname(), null, null, getTransMeta(), getRepository(), getMetaStore() );
@@ -85,66 +154,57 @@ public class AvroMetadataDiscovery extends BaseStep implements StepInterface {
       data.avroSchemaLocationTypeIndex = data.outputRowMeta.indexOfValue( String.valueOf( "Schema location type" ) );
 
       data.avroPathIndex = data.outputRowMeta.indexOfValue( meta.getAvroPathFieldName() );
-      data.avroTypeIndex = data.outputRowMeta.indexOfValue( meta.getAvroTypeFieldName() );
       data.avroNullableIndex = data.outputRowMeta.indexOfValue( meta.getNullableFieldName() );
+      data.avroTypeIndex = data.outputRowMeta.indexOfValue( meta.getAvroTypeFieldName() );
       data.avroKettleTypeIndex = data.outputRowMeta.indexOfValue( meta.getKettleTypeFieldName() );
-    }
 
-    String schemaStr = null;
-    if ( meta.getFormat() != 0 && meta.schemaLocationType == 0 && !Utils.isEmpty( meta.getSchemaLocation() ) ) {
       try {
-        schemaStr =
-          String.valueOf( new Schema.Parser().parse( KettleVFS.getInputStream( meta.getSchemaLocation(), null ) ) );
-      } catch ( IOException e ) {
-        throw new RuntimeException( e );
+        Schema schema = new Schema.Parser().parse( schemaStr );
+
+        List<AvroInputField> schemaLeafFields = (List<AvroInputField>) getLeafFields( schema );
+
+        for ( IAvroInputField avroInputField : schemaLeafFields ) {
+
+          Object[] outputRow = RowDataUtil.allocateRowData( data.getOutputRowMeta().size() );
+
+          if ( data.avroSourceFormatIndex > -1 ) {
+            outputRow[ data.avroSourceFormatIndex ] = data.avroSourceFormat;
+          }
+          if ( data.avroDataLocationIndex > -1 ) {
+            outputRow[ data.avroDataLocationIndex ] = data.avroDataLocation;
+          }
+          if ( data.avroDataLocationTypeIndex > -1 ) {
+            outputRow[ data.avroDataLocationTypeIndex ] = data.avroDataLocationType;
+          }
+          if ( data.avroSchemaLocationIndex > -1 ) {
+            outputRow[ data.avroSchemaLocationIndex ] = data.avroSchemaLocation;
+          }
+          if ( data.avroSchemaLocationTypeIndex > -1 ) {
+            outputRow[ data.avroSchemaLocationTypeIndex ] = data.avroSchemaLocationType;
+          }
+
+          if ( data.avroPathIndex > -1 ) {
+            outputRow[ data.avroPathIndex ] = avroInputField.getAvroFieldName();
+          }
+          if ( data.avroTypeIndex > -1 ) {
+            outputRow[ data.avroTypeIndex ] = meta.setAvroFieldType( avroInputField.getAvroType().getBaseType(),
+              avroInputField.getAvroType().getLogicalType() );
+          }
+          if ( data.avroNullableIndex > -1 ) {
+            outputRow[ data.avroNullableIndex ] = true;
+          }
+          if ( data.avroKettleTypeIndex > -1 ) {
+            outputRow[ data.avroKettleTypeIndex ] =
+              ValueMetaFactory.getValueMetaName( avroInputField.getPentahoType() );
+          }
+
+          putRow( data.outputRowMeta, outputRow );
+
+        }
+
+      } catch ( Exception e ) {
+        throw new KettleException( e );
       }
-    }
-
-    try {
-      Schema schema = new Schema.Parser().parse( schemaStr );
-
-      List<AvroInputField> schemaLeafFields = (List<AvroInputField>) getLeafFields( schema );
-
-      for ( IAvroInputField avroInputField : schemaLeafFields ) {
-
-        Object[] outputRow = RowDataUtil.allocateRowData( data.getOutputRowMeta().size() );
-
-        if ( data.avroSourceFormatIndex > -1 ) {
-          outputRow[ data.avroSourceFormatIndex ] = data.avroSourceFormat;
-        }
-        if ( data.avroDataLocationIndex > -1 ) {
-          outputRow[ data.avroDataLocationIndex ] = data.avroDataLocation;
-        }
-        if ( data.avroDataLocationTypeIndex > -1 ) {
-          outputRow[ data.avroDataLocationTypeIndex ] = data.avroDataLocationType;
-        }
-        if ( data.avroSchemaLocationIndex > -1 ) {
-          outputRow[ data.avroSchemaLocationIndex ] = data.avroSchemaLocation;
-        }
-        if ( data.avroSchemaLocationTypeIndex > -1 ) {
-          outputRow[ data.avroSchemaLocationTypeIndex ] = data.avroSchemaLocationType;
-        }
-
-        if ( data.avroPathIndex > -1 ) {
-          outputRow[ data.avroPathIndex ] = avroInputField.getAvroFieldName();
-        }
-        if ( data.avroTypeIndex > -1 ) {
-          outputRow[ data.avroTypeIndex ] = meta.setAvroFieldType( avroInputField.getAvroType().getBaseType(),
-            avroInputField.getAvroType().getLogicalType() );
-        }
-        if ( data.avroNullableIndex > -1 ) {
-          outputRow[ data.avroNullableIndex ] = true;
-        }
-        if ( data.avroKettleTypeIndex > -1 ) {
-          outputRow[ data.avroKettleTypeIndex ] = ValueMetaFactory.getValueMetaName( avroInputField.getPentahoType() );
-        }
-
-        putRow( data.outputRowMeta, outputRow );
-
-      }
-
-    } catch ( Exception e ) {
-      throw new KettleException( e );
     }
 
     if ( row == null ) {
