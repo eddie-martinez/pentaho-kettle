@@ -418,6 +418,8 @@ public class GUIResource {
 
   private SwtUniversalImage imageRefreshDisabled;
 
+  private SwtUniversalImage imageRefreshAll;
+
   private SwtUniversalImage imageHomeEnabled;
 
   private SwtUniversalImage imageHomeDisabled;
@@ -1238,6 +1240,10 @@ public class GUIResource {
     // ui/images/refresh-disabled.png
     imageRefreshDisabled = SwtSvgImageUtil.getUniversalImage( display, getClass().getClassLoader(),
       BasePropertyHandler.getProperty( "RefreshDisabled" ) );
+
+    // ui/images/refresh.png
+    imageRefreshAll = SwtSvgImageUtil.getUniversalImage( display, getClass().getClassLoader(),
+      "refresh.png" );
 
     // ui/images/home-enabled.png
     imageHomeEnabled = SwtSvgImageUtil.getUniversalImage( display, getClass().getClassLoader(),
@@ -2306,6 +2312,10 @@ public class GUIResource {
 
   public Image getImageCollapseAllMedium() {
     return imageCollapseAll.getAsBitmapForSize( display, ConstUI.MEDIUM_ICON_SIZE, ConstUI.MEDIUM_ICON_SIZE );
+  }
+
+  public Image getImageRefreshAll(){
+    return imageRefreshAll.getAsBitmapForSize( display, ConstUI.SMALL_ICON_SIZE, ConstUI.SMALL_ICON_SIZE );
   }
 
   public Image getImageStepError() {

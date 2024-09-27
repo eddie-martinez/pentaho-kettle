@@ -120,6 +120,7 @@ import org.pentaho.di.core.exception.KettleAuthException;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleFileException;
 import org.pentaho.di.core.exception.KettleMissingPluginsException;
+import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleRowException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.exception.KettleXMLException;
@@ -1988,7 +1989,7 @@ public class Spoon extends ApplicationWindow implements AddUndoPositionInterface
     viewComposite.setLayout( new FormLayout()  );
     viewComposite.setBackground( GUIResource.getInstance().getColorDemoGray() );
 
-    viewTreeToolbar = new TreeToolbar( viewComposite, SWT.NONE );
+    viewTreeToolbar = new TreeToolbar( viewComposite, SWT.NONE, false );
     FormData fdTreeToolbar = new FormData();
     fdTreeToolbar.left = new FormAttachment( 0 );
     fdTreeToolbar.right = new FormAttachment( 100 );
@@ -2066,7 +2067,7 @@ public class Spoon extends ApplicationWindow implements AddUndoPositionInterface
     designComposite.setLayout( new FormLayout()  );
     designComposite.setBackground( GUIResource.getInstance().getColorDemoGray() );
 
-    designTreeToolbar = new TreeToolbar( designComposite, SWT.NONE );
+    designTreeToolbar = new TreeToolbar( designComposite, SWT.NONE, true );
     FormData fdTreeToolbar = new FormData();
     fdTreeToolbar.left = new FormAttachment( 0 );
     fdTreeToolbar.right = new FormAttachment( 100 );
@@ -2100,6 +2101,18 @@ public class Spoon extends ApplicationWindow implements AddUndoPositionInterface
         tidyBranches( coreObjectsTree.getItems(), false );
       }
     } );
+
+    designTreeToolbar.refreshAllListener( new SelectionAdapter() {
+      @Override
+      public void widgetSelected( SelectionEvent selectionEvent ) {
+          try {
+            PluginRegistry.init();
+          } catch ( KettlePluginException e ) {
+            throw new RuntimeException( e );
+          }
+          tidyBranches( coreObjectsTree.getItems(), false );
+        }
+      } );
 
     design = new CTabItem( tabFolder, SWT.NONE );
     design.setText( STRING_SPOON_CORE_OBJECTS_TREE );

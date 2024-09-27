@@ -50,7 +50,15 @@ public class TreeToolbar extends Composite {
   private ToolItem expandAll;
   private ToolItem collapseAll;
 
-  public TreeToolbar( Composite composite, int i ) {
+  private ToolItem refreshAll;
+
+//  public void setRefreshAll( boolean refreshAll ) {
+//    isRefreshAll = refreshAll;
+//  }
+//
+//  private boolean isRefreshAll = false;
+
+  public TreeToolbar( Composite composite, int i , boolean refresh) {
     super( composite, i );
 
     FormLayout formLayout = new FormLayout();
@@ -78,6 +86,9 @@ public class TreeToolbar extends Composite {
     expandAll.setImage( GUIResource.getInstance().getImageExpandAll() );
     collapseAll = new ToolItem( treeTb, SWT.PUSH );
     collapseAll.setImage( GUIResource.getInstance().getImageCollapseAll() );
+    refreshAll = new ToolItem( treeTb, SWT.PUSH );
+    refreshAll.setImage( GUIResource.getInstance().getImageRefreshAll() );
+    refreshAll.setEnabled( refresh );
 
     FormData fdTreeToolbar = new FormData();
     if ( Const.isLinux() ) {
@@ -156,6 +167,10 @@ public class TreeToolbar extends Composite {
 
   public void addCollapseAllListener( SelectionAdapter selectionAdapter ) {
     collapseAll.addSelectionListener( selectionAdapter );
+  }
+
+  public void refreshAllListener( SelectionAdapter selectionAdapter ){
+    refreshAll.addSelectionListener( selectionAdapter );
   }
 
   public String getSearchText() {
