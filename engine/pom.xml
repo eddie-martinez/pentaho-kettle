@@ -238,6 +238,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>infobright</groupId>
       <artifactId>infobright-core</artifactId>
@@ -478,6 +479,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>org.eobjects.sassyreader</groupId>
       <artifactId>SassyReader</artifactId>
